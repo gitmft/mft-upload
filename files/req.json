@@ -1,0 +1,7 @@
+{
+    "url": "http://localhost:7901/mftapp/services/transfer/SOAP2File",
+    "method": "POST",
+    "headers": { "Content-Type": "text/xml; charset=utf-8" },
+    "body": "",
+    "auth": { "user": "USERNAME", "pass": "PASSWORD" }
+}
