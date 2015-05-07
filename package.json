@@ -1,0 +1,30 @@
+{
+  "name": "mft-upload",
+  "version": "1.0.0",
+  "description": "A REST utility for uploading file to a SOAP WebService. It is configurable and works as is with Oracle Managed file transfer (MFT).",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gitmft/mft-upload"
+  },
+  "keywords": [
+    "REST",
+    "files",
+    "SOAP",
+    "MFT",
+    "Oracle",
+    "SOA",
+    "sdk",
+    "utility",
+    "adapter"
+  ],
+  "author": "Dave Berry <obigfiles@gmail.com> (https://github.com/gitmft)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gitmft/mft-upload/issues"
+  },
+  "homepage": "https://github.com/gitmft/mft-upload"
+}
