@@ -5,7 +5,9 @@ var outils = require('omft-utils');
 var util = require('util');
 var osenv = require('osenv');
 
-// BEGIN INTERNAL FUNCTIONS
+// BEGIN INTERNAL FUNCTIONS AND PROPERTIES
+
+var _DEFAULT_MAX_FILE_SIZE = 26*1024*1024;
 
 function getStats(start, end,  fn, path, sz) {
   var ms = end-start
@@ -18,7 +20,7 @@ function getStats(start, end,  fn, path, sz) {
 };
 
 // generate json from the SOAP body
-// small conveience method using xml2js
+// small convenience method using xml2js
 var soap2json = function(soapbody, cb) {
   var xml2js = require('xml2js');
   var po = { mergeAttrs: 'true' }; 
@@ -27,7 +29,7 @@ var soap2json = function(soapbody, cb) {
   parser.parseString(soapbody, function (err, json) {
     if (err) {
       var e2 = 'soap2json error: ' +err;
-      return callback(e2, json);
+      return cb(e2, json);
     };
 
     var env = json["env:Envelope"];
@@ -41,9 +43,8 @@ var soap2json = function(soapbody, cb) {
 
 // BEGIN EXPORTED FUNCTIONS
 // the majority of the work is done here uploading the file
-var fileUpload = function(fn, req, cb) {
+var fileUpload = function(fn, cfg, cb) {
   // cb(er, respcode, body, stats)
-  var MAX_FILE_SIZE = 25*1024*1024;
   var stats = {};
   var myer = '';
   var filebody, resp = '';
@@ -51,17 +52,35 @@ var fileUpload = function(fn, req, cb) {
   var filename =  path.basename(filepath);
   var filesize = 0;
   var rc;
+  var maxsize = cfg.maxsize;
+  var reqtype = cfg.type;
+  var req = cfg.request;
 
-  // generate the SOAP upload payload
-  outils.genUploadSOAP(filepath, MAX_FILE_SIZE, function(er, fs, bdy) {
-    if (er) {
-      var err = 'fileUpload error: ' +er;
-      return(err);
-    }
-    filesize = fs;
-    req.body = bdy;
-  }); 
+  maxsize ? maxsize : _DEFAULT_MAX_FILE_SIZE;
 
+  //console.log("Maxsize is: " +maxsize);
+
+  switch (reqtype.toUpperCase()) {
+        case 'SOAP':
+          // generate the SOAP upload payload
+          outils.genUploadSOAP(filepath, maxsize, reqtype, function(er, fs, bdy) {
+            if (er) {
+              var err = 'fileUpload error: ' +er;
+              return cb(err);
+            }
+            filesize = fs;
+            req.body = bdy;
+          }); 
+          break;
+        case 'FORM':
+          var formname = cfg.formname;
+	  console.log("formname is " +formname);
+          req.formData[formname].value = fs.readFileSync(filepath, "utf8");
+          break;
+        default:
+          var rerr = "Error: Invalid Request Type: " +reqtype;
+          return cb(rerr);
+      }
   // invoke the request with timings
   start = new Date();
   end = new Date();
@@ -70,7 +89,7 @@ var fileUpload = function(fn, req, cb) {
     resp = response;
     if (error) {
 	console.log('fileupload.request.error is:' +error);
-	return(cb(error, response));
+	return cb(error, response);
     }
     rc = response.statusCode;
     //console.log('FileUpload Response code is:' +rc);
@@ -88,7 +107,7 @@ var fileUpload = function(fn, req, cb) {
     soap2json(body, function(err, json) {
       if (error) {
 	console.log('fileUpload error is:' +err);
-	return(cb(error, response));
+	return cb(error, response);
       }
       body = json;
     });
@@ -137,7 +156,9 @@ var getRequestConfig = function(argv, cb) {
   };
 
   try {
-    reqOptions = JSON.parse(fs.readFileSync(jsoncfg, "utf8"));
+    //console.log(JSON.stringify(fs.readFileSync(jsoncfg, "utf8")));
+    var reqOptions = JSON.parse(fs.readFileSync(jsoncfg, "utf8"));
+    var cfgtype = reqOptions.type;
   } catch (ee) {
     var merr = 'getConfig config read/parse error ' +jsoncfg +' ' +ee;
     return cb(merr);

@@ -2,15 +2,15 @@
 A simple REST utility for uploading files to a Managed File Transfer server or other file based integration servers, SaaS or PaaS cloud applications.
 
 ## Use Cases
-The intital use case is exposing a REST interface to upload to a SOAP WebService supporting inline XML for Binary. The utility works with Oracle Managed File Transfer server but uses payload templates so easily extensible to other use cases.
+This packages exposes a REST interface to upload to MFT SOAP WebServices or arbitrary HTTP form applications. The utility works with Oracle Managed File Transfer server and uses payload templates so easily extensible to other use cases.
+
+Implemented
+* SOAP inline XML or Binary base64 encoded data
+* HTTP Formdata for upload to arbitray web apps
 
 Future use cases include the following:
-
-* Upload to FTP/SFTP
-* Upload to FTP/SFTP with SOAP Pass-By-Reference notification
-* Upload to SOAP service using MTOM attachments 
-* Upload to other REST based file API's
-
+* Upload to SOAP service using SOAP attachments 
+* Upload to HTTP servers using MTOM attachments 
 
 ## Prerequisites
 
@@ -28,21 +28,24 @@ npm install mft-upload --save
 node upload.js file=index.js [config=req.json]
 
 ### Config File
-The config file describes the endpoint and authentication used by the [HTTP Request package](https://github.com/request/request). A sample req.json shown below using Basic authentication is provided in the [files folder](files/req.json). This package supports many authentication types.
+The config file describes a request type and maximum file size at the root level. It also embedds and reuses the request type endpoint and authentication used by the [HTTP Request package](https://github.com/request/request). A sample req.json shown below using Basic authentication is provided in the [files folder](files/req.json). Th request package supports many authentication types beyond what is shown below.
 
 
 ```
 {
+  "type": "SOAP",
+  "maxsize": 20214400,
+  "request": {
     "url": "http://localhost:7901/mftapp/services/transfer/SOAP2File",
     "method": "POST",
     "headers": { "Content-Type": "text/xml; charset=utf-8" },
     "body": "",
     "auth": { "user": "USERNAME", "pass": "PASSWORD" }
+  }
 }
 ```
 
 If a config argument is not provided, upload.js looks for one at ~/.mft/uploadreq.json
-
 
 ### Function getRequestConfig 
 #### Asyncronous function to process CLI arguments and get the config file

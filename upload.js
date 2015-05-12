@@ -10,6 +10,7 @@ var reqOptions;
 upload.getRequestConfig(process.argv, function(err, retargs, cfgfile, cfgjson) {
   if (err) {
     console.log(err);
+    console.trace(err);
     process.exit(1);
   }
   args = retargs;
