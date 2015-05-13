@@ -28,6 +28,7 @@
   },
   "homepage": "https://github.com/gitmft/mft-upload",
   "dependencies": {
+    "mocha": "^2.2.4",
     "omft-utils": "^1.0.10",
     "osenv": "^0.1.0",
     "request": "^2.55.0",
