@@ -7,7 +7,7 @@ var upload = require('..');
 describe('mft-upload tests', function() {
   it('Check for usage from getRequestConfig', function() {
     var expectout = 'Usage: _mocha file=<file> config=<json request config file>';
-    var result = 'nada';
+    var result = '';
     var ar = ['a=1'];
     upload.getRequestConfig(ar, function(err, retargs, cfgfile, json) {
       if (err) {
@@ -19,7 +19,7 @@ describe('mft-upload tests', function() {
 
   it('Check for ECONNREFUSED from getRequestConfig', function() {
     var expectout = 'fileupload.request.error is:Error: connect ECONNREFUSED';
-    var result = 'znada';
+    var result = '';
     var ar = ["file=upload.js","config=test/badreq.json"];
     var args, filepath, jsoncfg, reqOptions;
     upload.getRequestConfig(ar, function(err, retargs, cfgfile, json) {
@@ -46,20 +46,4 @@ console.log('err is ' +err);
   });
 
 });
-
-/*
-upload.getRequestConfig(process.argv, function(err, retargs, cfgfile, cfgjson) {
-  if (err) {
-    console.log(err);
-    process.exit(1);
-  }
-  args = retargs;
-  filepath = args.file;
-  jsoncfg = cfgfile;
-  reqOptions = cfgjson;
-});
-
-upload.fileUpload(filepath, reqOptions, function(er, respcode, jsonbody, stats) {
-  if (er) {
-*/
 

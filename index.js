@@ -63,12 +63,12 @@ var fileUpload = function(fn, cfg, cb) {
   switch (reqtype.toUpperCase()) {
         case 'SOAP':
           // generate the SOAP upload payload
-          outils.genUploadSOAP(filepath, maxsize, reqtype, function(er, fs, bdy) {
+          outils.genUploadSOAP(filepath, maxsize, reqtype, function(er, fsz, bdy) {
             if (er) {
               var err = 'fileUpload error: ' +er;
               return cb(err);
             }
-            filesize = fs;
+            filesize = fsz;
             req.body = bdy;
           }); 
           break;
@@ -76,6 +76,25 @@ var fileUpload = function(fn, cfg, cb) {
           var formname = cfg.formname;
 	  console.log("formname is " +formname);
           req.formData[formname].value = fs.readFileSync(filepath, "utf8");
+          break;
+        case 'WSA':
+          // generate the SOAP upload payload
+          outils.genUploadSOAP(filepath, maxsize, reqtype, function(er, fsz, bdy) {
+            if (er) {
+              var err = 'fileUpload error: ' +er;
+              return cb(err);
+            }
+            filesize = fsz;
+            req.headers.FileName = filename;
+            req.multipart[0].body = bdy;
+            //req.multipart[1].body = fs.readFileSync(filepath);
+            req.multipart[1].body = fs.createReadStream(filepath);
+          }); 
+          break;
+        case 'FORM':
+          var formname = cfg.formname;
+	  console.log("formname is " +formname);
+          req.formData[formname].value = fs.readFileSync(filepath);
           break;
         default:
           var rerr = "Error: Invalid Request Type: " +reqtype;
@@ -156,9 +175,18 @@ var getRequestConfig = function(argv, cb) {
   };
 
   try {
-    //console.log(JSON.stringify(fs.readFileSync(jsoncfg, "utf8")));
-    var reqOptions = JSON.parse(fs.readFileSync(jsoncfg, "utf8"));
+    // remove comments from the cfg file
+    var strip = require('strip-json-comments');
+    var reqOptions = JSON.parse(strip(fs.readFileSync(jsoncfg, "utf8")));
+    //console.log(JSON.stringify(reqOptions));
+
     var cfgtype = reqOptions.type;
+    if (!cfgtype) { 
+      var cerr = 'getConfig config invalid config file:' +jsoncfg;
+      return cb(cerr);
+    };
+
+
   } catch (ee) {
     var merr = 'getConfig config read/parse error ' +jsoncfg +' ' +ee;
     return cb(merr);

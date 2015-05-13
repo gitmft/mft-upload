@@ -1,0 +1,37 @@
+{
+  // SOAP With Attachements
+  "type": "WSA", 
+
+  // OK TO CHANGE
+  "maxsize": 5242880026214400,  // 52 MB default
+  // OK TO CHANGE
+
+  // request object is from https://github.com/request/request
+  "request": {
+
+    // OK TO CHANGE: MFT SOAP Source Endpoint
+    "uri": "http://localhost:7901/mftapp/services/transfer/SOAP2File",
+    // OK TO CHANGE
+
+    "method": "POST",
+    "headers": {
+       "FileName": "",
+       "Content-Type": "multipart/related;type=\"text/xml\""
+    },
+    "multipart": [
+       {
+         "Content-Type": "text/xml;charset=UTF-8",
+         "body": "",
+
+         // OK TO CHANGE: supports many security options. See https://github.com/request/request
+         "auth": { "user": "USERNAME", "pass": "PASSWORD" }
+         // OK TO CHANGE
+
+       },
+       {
+         "Content-Type": "application/octet-stream",
+         "body": ""
+       }
+    ]
+  }
+}
