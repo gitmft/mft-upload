@@ -49,6 +49,7 @@ var fileUpload = function(fn, cfg, cb) {
   var myer = '';
   var filebody, resp = '';
   var start, end; 
+  var filepath = fn;
   var filename =  path.basename(filepath);
   var filesize = 0;
   var rc;
@@ -56,14 +57,38 @@ var fileUpload = function(fn, cfg, cb) {
   var reqtype = cfg.type;
   var req = cfg.request;
 
+  cfg.file = filepath || cfg.filepath;
   maxsize ? maxsize : _DEFAULT_MAX_FILE_SIZE;
 
   //console.log("Maxsize is: " +maxsize);
 
   switch (reqtype.toUpperCase()) {
-        case 'SOAP':
-          // generate the SOAP upload payload
-          outils.genUploadSOAP(filepath, maxsize, reqtype, function(er, fsz, bdy) {
+        case 'FORM':
+          var formname = cfg.formname;
+	  console.log("formname is " +formname);
+          req.formData[formname].value = fs.readFileSync(filepath, "utf8");
+          break;
+        case 'WSA':
+          // generate the request
+          outils.genUploadRequest(cfg, function(er, fsz, bdy) {
+            if (er) {
+              var err = 'fileUpload error: ' +er;
+              return cb(err);
+            }
+            filesize = fsz;
+            req.headers.FileName = filename;
+            req.multipart[0].body = bdy;
+            req.multipart[1].body = fs.createReadStream(filepath);
+          }); 
+          break;
+        default: // SOAP, WSSE, UCM
+          // special handling for WSEE to not require outils to do it
+          if (cfg.request.auth.user) cfg.user=cfg.request.auth.user;
+          if (cfg.request.auth.pass) cfg.pass=cfg.request.auth.pass;
+          //console.log(JSON.stringify(cfg));
+          //console.log(JSON.stringify(cfg));
+          // generate the request payloads
+          outils.genUploadRequest(cfg, function(er, fsz, bdy) {
             if (er) {
               var err = 'fileUpload error: ' +er;
               return cb(err);
@@ -72,33 +97,6 @@ var fileUpload = function(fn, cfg, cb) {
             req.body = bdy;
           }); 
           break;
-        case 'FORM':
-          var formname = cfg.formname;
-	  console.log("formname is " +formname);
-          req.formData[formname].value = fs.readFileSync(filepath, "utf8");
-          break;
-        case 'WSA':
-          // generate the SOAP upload payload
-          outils.genUploadSOAP(filepath, maxsize, reqtype, function(er, fsz, bdy) {
-            if (er) {
-              var err = 'fileUpload error: ' +er;
-              return cb(err);
-            }
-            filesize = fsz;
-            req.headers.FileName = filename;
-            req.multipart[0].body = bdy;
-            //req.multipart[1].body = fs.readFileSync(filepath);
-            req.multipart[1].body = fs.createReadStream(filepath);
-          }); 
-          break;
-        case 'FORM':
-          var formname = cfg.formname;
-	  console.log("formname is " +formname);
-          req.formData[formname].value = fs.readFileSync(filepath);
-          break;
-        default:
-          var rerr = "Error: Invalid Request Type: " +reqtype;
-          return cb(rerr);
       }
   // invoke the request with timings
   start = new Date();
@@ -153,6 +151,7 @@ var getRequestConfig = function(argv, cb) {
   var reqOptions;
   var DEFAULT_CONFIG_FILE = '/.mft/uploadreq.json';
   var args = outils.parseCalloutArgs(argv);
+
   if (!args.file) {
     var me = path.basename(process.argv[1]);
     var e1 = 'ERROR: File argument not provided' +"\n";
@@ -161,7 +160,7 @@ var getRequestConfig = function(argv, cb) {
     return cb(err);
   };
 
-  filepath = args.file;
+  var filepath = args.file;
 
   if (args.config) {
     jsoncfg = args.config;
