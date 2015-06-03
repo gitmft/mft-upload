@@ -6,10 +6,10 @@ This packages exposes a REST interface to upload to MFT SOAP WebServices or arbi
 
 Implemented
 * SOAP inline XML or Binary base64 encoded data
+* Upload to SOAP service using SOAP attachments (Swa) 
 * HTTP Formdata for upload to arbitray web apps
 
 Future use cases include the following:
-* Upload to SOAP service using SOAP attachments 
 * Upload to HTTP servers using MTOM attachments 
 
 ## Prerequisites
@@ -27,8 +27,8 @@ npm install mft-upload --save
 
 node upload.js file=index.js [config=req.json]
 
-### Config File
-The config file describes a request type and maximum file size at the root level. It also embedds and reuses the request type endpoint and authentication used by the [HTTP Request package](https://github.com/request/request). A sample req.json shown below using Basic authentication is provided in the [files folder](files/req.json). Th request package supports many authentication types beyond what is shown below.
+### Config Files
+The config file describes a request type and maximum file size at the root level. It also embedds and reuses the request type endpoint and authentication used by the [HTTP Request package](https://github.com/request/request). A sample req.json shown below using Basic authentication is provided in the [files folder](files/req.json). The request package supports many authentication types beyond what is shown below.
 
 
 ```
@@ -36,13 +36,38 @@ The config file describes a request type and maximum file size at the root level
   "type": "SOAP",
   "maxsize": 20214400,
   "request": {
-    "url": "http://localhost:7901/mftapp/services/transfer/SOAP2File",
+    "url": "http://HOSTNAME:7901/mftapp/services/transfer/SOAP2File",
     "method": "POST",
     "headers": { "Content-Type": "text/xml; charset=utf-8" },
     "body": "",
     "auth": { "user": "USERNAME", "pass": "PASSWORD" }
   }
 }
+
+{
+  "type": "WSA",
+  "maxsize": 5242880026214400,
+  "request": {
+    "uri": "http://HOSTNAME.com:7901/mftapp/services/transfer/SOAP2File",
+    "method": "POST",
+    "headers": {
+       "FileName": "",
+       "Content-Type": "multipart/related;type=\"text/xml\""
+    },
+    "multipart": [
+       {
+         "Content-Type": "text/xml;charset=UTF-8",
+         "body": "",
+         "auth": { "user": "USERNAME", "pass": "PASSWORD" }
+       },
+       {
+         "Content-Type": "application/octet-stream",
+         "body": ""
+       }
+    ]
+  }
+}
+
 ```
 
 If a config argument is not provided, upload.js looks for one at ~/.mft/uploadreq.json

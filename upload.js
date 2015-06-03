@@ -16,11 +16,6 @@ upload.getRequestConfig(process.argv, function(err, retargs, cfgfile, cfgjson) {
   args = retargs;
   filepath = args.file;
 
-  // Added this to support the default RunScript callout "filename" parameter
-  if (!filepath && args.filename) {
-    filepath = args.filename;
-    opts.file = filepath; 
-  };
   jsoncfg = cfgfile;
   reqOptions = cfgjson;
 });

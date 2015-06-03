@@ -19,6 +19,74 @@ function getStats(start, end,  fn, path, sz) {
   return s;
 };
 
+// validate the HTTP/SOAP response looking for SOAP Faults. Mostly for MFT responses which uses 200 even for SOAP Faults
+// throws an error if a fault sis found
+var validateSOAPResponse = function(soapbody, cb) {
+  var xml2js = require('xml2js');
+  var po = { mergeAttrs: 'true'}; 
+  var myerr;
+  var mj;
+
+  var parser = new xml2js.Parser(po);
+  parser.parseString(soapbody, function (err, json) {
+
+    if (err) {
+      var serr = '' +err;
+      var allow = 'Error: Non-whitespace before first tag';
+      if (serr.indexOf(allow) != 0) {
+        var e2 = 'validateSOAPResponse parse error: ' +serr;
+        return cb(e2);
+      };
+    } else {
+      mj = json;
+    };
+  });
+
+  if (!mj) return cb('');
+
+  try {
+    /* example of MFT env
+      { 'xmlns:env': [ 'http://schemas.xmlsoap.org/soap/envelope/' ],
+        'env:Header': [ '' ],
+        'env:Body': [ { 'env:Fault': [Object] } ] }
+      [ { 'env:Fault': [ [Object] ] } ]
+    */
+
+    //console.log(mj);
+    var env = mj["env:Envelope"];
+    if (!env) return cb('');
+    var hdr = env["env:Header"];
+    if (!hdr) return cb('');
+    var bdy = env["env:Body"];
+    if (!bdy) return cb('');
+    //console.log(env);
+    //console.log(bdy);
+    /* example of fault
+    [ { 'env:Fault': [ [Object] ] } ]
+    [ { faultcode: [ 'env:MFT_WS_INBOUND_INVALID_SOAP_REQUEST' ],
+        faultstring: [ 'MFT message processing failed with exception code: MFT_WS_INBOUND_INVALID_SOAP_REQUEST' ],
+        faultactor: [ 'http://hostname.com:7901/mftapp/services/transfer/SOAP2File' ],
+        detail: [ [Object] ] } ]
+    */
+
+    var flt = bdy[0]['env:Fault'];
+    if (flt) {
+      var fcode = flt[0].faultcode;
+      var fstr  = flt[0].faultstring;
+      var fact  = flt[0].faultactor;
+      var ferr = 'faultcode:' +fcode +'; ';
+      ferr += 'faultstring:' +fstr +'; ';
+      ferr += 'faultactor:' +fact +'; ';
+      myerr = 'validateSOAPResponse parse error: ' +ferr;
+      //console.log(myerr);
+    };
+  } catch (per) {
+    return cb(per);
+  };
+
+    return cb(myerr);
+};
+
 // generate json from the SOAP body
 // small convenience method using xml2js
 var soap2json = function(soapbody, cb) {
@@ -102,6 +170,8 @@ var fileUpload = function(fn, cfg, cb) {
   start = new Date();
   end = new Date();
 
+  //console.log(req.body);
+
   request(req, function (error, response, body) {
     resp = response;
     if (error) {
@@ -113,7 +183,14 @@ var fileUpload = function(fn, cfg, cb) {
     end = new Date();
     if (rc == 200) {
         // Print out the response body
+        //console.log(req.body);
         //console.log(body)
+        validateSOAPResponse(body, function(err) {
+          if (err) {
+	    console.log(err); 
+	    return cb(err);
+          };
+        });
     } else {
       var mer = 'ERROR: fileUpload.request Response code of ' +rc +' is not 200' +"\n";;
       mer += body;
