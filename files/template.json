@@ -1,22 +1,12 @@
 {
   "type": "SOAP",
-
-  // OK TO CHANGE: 25 MB max file size for inline payloads
   "maxsize": 26214400,
-  // OK TO CHANGE
-
+  "templatedir": "mytemplates",
   "request": {
-
-     // OK TO CHANGE: MFT SOAP Source endpoint
     "url": "http://localhost:7901/mftapp/services/transfer/SOAP2File",
-     // OK TO CHANGE
-
     "method": "POST",
     "headers": { "Content-Type": "text/xml; charset=utf-8" },
-
-     // OK TO CHANGE: supports many security options. See https://github.com/request/request
     "auth": { "user": "USERNAME", "pass": "PASSWORD" }
-     // OK TO CHANGE
 
   }
 }

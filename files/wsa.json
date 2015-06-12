@@ -15,13 +15,11 @@
 
     "method": "POST",
     "headers": {
-       "FileName": "",
        "Content-Type": "multipart/related;type=\"text/xml\""
     },
     "multipart": [
        {
          "Content-Type": "text/xml;charset=UTF-8",
-         "body": "",
 
          // OK TO CHANGE: supports many security options. See https://github.com/request/request
          "auth": { "user": "USERNAME", "pass": "PASSWORD" }
@@ -29,8 +27,7 @@
 
        },
        {
-         "Content-Type": "application/octet-stream",
-         "body": ""
+         "Content-Type": "application/octet-stream"
        }
     ]
   }

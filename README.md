@@ -6,8 +6,10 @@ This packages exposes a REST interface to upload to MFT SOAP WebServices or arbi
 
 Implemented
 * SOAP inline XML or Binary base64 encoded data
-* Upload to SOAP service using SOAP attachments (Swa) 
+* Upload to SOAP service using SOAP attachments (SwA) 
 * HTTP Formdata for upload to arbitray web apps
+* Chaining of requests for upload and notify SOAP service use cases
+* Custom payload templates using templatedir property
 
 Future use cases include the following:
 * Upload to HTTP servers using MTOM attachments 
@@ -20,6 +22,7 @@ The SOAP interface communicates with an MFT SOA or SOAP Source that must be conf
 ## Installation
 
 npm install mft-upload --save
+
 
 ## Usage
 
@@ -39,11 +42,15 @@ The config file describes a request type and maximum file size at the root level
     "url": "http://HOSTNAME:7901/mftapp/services/transfer/SOAP2File",
     "method": "POST",
     "headers": { "Content-Type": "text/xml; charset=utf-8" },
-    "body": "",
     "auth": { "user": "USERNAME", "pass": "PASSWORD" }
   }
 }
+```
 
+
+Following type support SOAP with Attachments.
+
+```
 {
   "type": "WSA",
   "maxsize": 5242880026214400,
@@ -57,17 +64,48 @@ The config file describes a request type and maximum file size at the root level
     "multipart": [
        {
          "Content-Type": "text/xml;charset=UTF-8",
-         "body": "",
          "auth": { "user": "USERNAME", "pass": "PASSWORD" }
        },
        {
-         "Content-Type": "application/octet-stream",
-         "body": ""
+         "Content-Type": "application/octet-stream"
        }
     ]
   }
 }
+```
 
+Config "templatedir" allows user provided templates with filename of "<type>-PAYLOAD"
+
+```
+{
+  "type": "SOAP",
+  "templatedir": "mytemplates", // template file is at "mytemplates/SOAP-PAYLOAD"
+  "request": {
+    "url": "http://localhost:7901/mftapp/services/transfer/SOAP2File",
+    "method": "POST",
+    "headers": { "Content-Type": "text/xml; charset=utf-8" },
+    "auth": { "user": "USERNAME", "pass": "PASSWORD" }
+
+  }
+}
+```
+
+
+Illustrates chaining of requests using "cfgarr config array element for upload followed by a SOAP notification call.
+
+```
+{
+  "type": "SOAP",
+  "cfgarr": [
+        { "config": "wsa.json", "file": "package.json"}
+  ],
+  "request": {
+    "url": "http://HOSTNAME:7901/mftapp/services/transfer/SOAP2File",
+    "method": "POST",
+    "headers": { "Content-Type": "text/xml; charset=utf-8" },
+    "auth": { "user": "USERNAME", "pass": "PASSWORD" }
+  }
+}
 ```
 
 If a config argument is not provided, upload.js looks for one at ~/.mft/uploadreq.json
@@ -100,6 +138,19 @@ fileUpload(filepath, reqOptions, function(er, respcode, jsonbody, stats) {
   console.log(stats.summary);
 });
 
+```
+
+### Function upload
+#### Async function that encapsulates getRequest and fileUpload into a single method.
+#### Works with the config cfgarr element to chain requests.
+
+```
+upload(process.argv, function(err, respcode, jcfg, stats) {
+  if (err) {
+    console.log('Upload Error: ' +err);
+    process.exit(1);
+  };
+});
 ```
 
 ## Test

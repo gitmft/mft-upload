@@ -1,0 +1,12 @@
+{
+  "type": "SOAP",
+  "cfgarr": [
+        { "config": "wsa.json", "file": "package.json"}
+  ],
+  "request": {
+    "url": "http://HOSTNAME:7901/mftapp/services/transfer/SOAP2File",
+    "method": "POST",
+    "headers": { "Content-Type": "text/xml; charset=utf-8" },
+    "auth": { "user": "USERNAME", "pass": "PASSWORD" }
+  }
+}

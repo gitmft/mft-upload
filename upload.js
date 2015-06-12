@@ -5,36 +5,37 @@ var filebody
 var filepath;
 var jsoncfg;
 var args;
-var reqOptions;
 
-upload.getRequestConfig(process.argv, function(err, retargs, cfgfile, cfgjson) {
-  if (err) {
-    console.log(err);
-    console.trace(err);
-    process.exit(1);
+// MAIN processing
+// utilize the upload convenience function to invoke functions upload.getRequestConfig and upload.uploadFile
+// support chained requests using config.cfgarr object to invoke multiple services
+/* chaining example
+  {
+    "type": "SOAP",
+    "cfgarr": [
+          { "config": ".tmp/wsa.json", "file": ".tmp/soap2.json"},
+          { "config": ".tmp/wsa.json", "file": ".tmp/soap.json"}
+    ],
+    "request": {
+      "url": "http://HOSTNAME:7901/mftapp/services/transfer/SOAP2File",
+      "method": "POST",
+      "headers": { "Content-Type": "text/xml; charset=utf-8" },
+      "body": "",
+      "auth": { "user": "USERNAME", "pass": "PASSWORD" }
+    }
   }
-  args = retargs;
-  filepath = args.file;
 
-  jsoncfg = cfgfile;
-  reqOptions = cfgjson;
-});
+*/
 
-upload.fileUpload(filepath, reqOptions, function(er, respcode, jsonbody, stats) {
-  if (er) {
-    var err = 'main.fileUpload error: ' +er;
-    console.log(err);
-    console.trace();
+upload.upload(process.argv, function(err, respcode, jcfg, stats) {
+  if (err) {
+    console.log('Upload Error: ' +err);
+    //console.trace('Upload Error: ' +err);
     process.exit(1);
-  } else {
-    //console.log('Main fileUpload call complete');
-    console.log('Response code is: ' +respcode);
-    //console.log(jsonbody);
-    //console.log(util.inspect(jsonbody, false, null));
-    console.log(stats.summary);
-    return;
   };
 });
+
+// END MAIN
 
 process.on('uncaughtException', function(err) {
   // print the uncaught error and exit;
@@ -43,4 +44,6 @@ process.on('uncaughtException', function(err) {
   process.exit(1);
 });
 
-// END MAIN
+
+
+

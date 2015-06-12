@@ -20,7 +20,7 @@ function getStats(start, end,  fn, path, sz) {
 };
 
 // validate the HTTP/SOAP response looking for SOAP Faults. Mostly for MFT responses which uses 200 even for SOAP Faults
-// throws an error if a fault sis found
+// throws an error if a fault is found
 var validateSOAPResponse = function(soapbody, cb) {
   var xml2js = require('xml2js');
   var po = { mergeAttrs: 'true'}; 
@@ -107,6 +107,32 @@ var soap2json = function(soapbody, cb) {
     return cb(err, json);
   });
 };
+
+// recursive invocation simulating a for loop
+function nextUpload(carr) {
+  if (carr.length == 0) {
+    // all uploads completed
+    //console.log('nextUpload EXIT: carr length is 0');
+    return;
+  };
+
+  var cfg   = carr.shift();
+  var ccfg  = cfg.config;
+  var cfile = cfg.file +' ' +carr.length;
+  var str = 'B4 carr.length = ' +carr.length +' Config=' +ccfg +' File=' +cfile;
+  var argv2 = ['file='+cfile, 'config='+ccfg];
+  //console.log('nextUpload ENTRY:' +str);
+  upload(argv2, function(er2, respcode2, jcfg2, stats2) {
+    if (er2) {
+      var estr = 'Request.cfgarr config=' +ccfg +' file=' +cfile +' ' +er2;
+      console.log(estr);
+      process.exit(1);
+    } else {
+      nextUpload(carr);
+    };
+  });
+};
+
 // END INTERNAL ONLY FUNCTIONS
 
 // BEGIN EXPORTED FUNCTIONS
@@ -114,6 +140,7 @@ var soap2json = function(soapbody, cb) {
 var fileUpload = function(fn, cfg, cb) {
   // cb(er, respcode, body, stats)
   var stats = {};
+  var fstats = {};
   var myer = '';
   var filebody, resp = '';
   var start, end; 
@@ -124,9 +151,29 @@ var fileUpload = function(fn, cfg, cb) {
   var maxsize = cfg.maxsize;
   var reqtype = cfg.type;
   var req = cfg.request;
+  var cfgarr = cfg.cfgarr;
 
   cfg.file = filepath || cfg.filepath;
   maxsize ? maxsize : _DEFAULT_MAX_FILE_SIZE;
+
+  // check if request is "chained"
+  if (cfgarr && cfgarr.length > 0) {
+    //console.log('cfgarr.length is ' +cfgarr.length);
+    for (var i in cfgarr) {
+      var mycfg = cfgarr[i];
+      var ccfg  = mycfg.config;
+      var cfile = mycfg.file;
+      //console.log('cfgarr.length = ' +cfgarr.length +' Config=' +ccfg +' File=' +cfile);
+      fs.stat(ccfg, function (er, fstats) {
+       if (er)
+        return cb('Request.cfgarr ' +i +' config does not exist: ' +ccfg) +' ' +er;
+      });
+      fs.stat(cfile, function (er, fstats) {
+       if (er)
+        return cb('Request.cfgarr ' +i +' file does not exist: ' +cfile) +' ' +er;
+      });
+    };
+  };
 
   //console.log("Maxsize is: " +maxsize);
 
@@ -195,7 +242,7 @@ var fileUpload = function(fn, cfg, cb) {
       var mer = 'ERROR: fileUpload.request Response code of ' +rc +' is not 200' +"\n";;
       mer += body;
       //console.log(mer);
-      return cb(mer);
+      return cb(mer, rc);
     }
     // convert body to json for return
     soap2json(body, function(err, json) {
@@ -254,22 +301,58 @@ var getRequestConfig = function(argv, cb) {
     // remove comments from the cfg file
     var strip = require('strip-json-comments');
     var reqOptions = JSON.parse(strip(fs.readFileSync(jsoncfg, "utf8")));
-    //console.log(JSON.stringify(reqOptions));
 
     var cfgtype = reqOptions.type;
+    //console.log(jsoncfg +' ' +JSON.stringify(reqOptions));
     if (!cfgtype) { 
-      var cerr = 'getConfig config invalid config file:' +jsoncfg;
+      var cerr = 'getRequestConfig config invalid config file:' +jsoncfg;
       return cb(cerr);
+    } else {
+      return cb('', args, jsoncfg, reqOptions);
     };
-
-
   } catch (ee) {
-    var merr = 'getConfig config read/parse error ' +jsoncfg +' ' +ee;
+    var merr = 'getRequestConfig config read/parse error ' +jsoncfg +' ' +ee;
     return cb(merr);
   }
-  return cb('', args, jsoncfg, reqOptions);
 };
 
 module.exports.getRequestConfig = getRequestConfig;
+
+// convenience function that does both config and upload
+// might roll this into the upload API index.js
+function upload(myargv, cb) {
+  var jsoncfg, filepath, args;
+  getRequestConfig(myargv, function(err, retargs, cfgfile, jcfg) {
+    if (err) {
+      //console.log(err);
+      //console.trace(err);
+      return cb(err);
+    }
+    args = retargs;
+    filepath = args.file;
+
+    jsoncfg = jcfg;
+
+    fileUpload(filepath, jsoncfg, function(er, respcode, jsonbody, stats) {
+      if (er) {
+        var err = 'main.fileUpload error: ' +er;
+        //console.log('TEST ' +err);
+        //console.trace();
+        return cb(er, respcode);
+      } else {
+        console.log('Response code is: ' +respcode);
+        console.log(stats.summary);
+        // support chaining of requests
+        var cfgarr = jsoncfg.cfgarr;
+        if (cfgarr && cfgarr.length > 0) {
+          nextUpload(cfgarr);
+        } else {
+          return cb('', respcode, jsoncfg, stats);
+        };
+      };
+    });
+  });
+};
+module.exports.upload = upload;
 
 // END EXPORTED FUNCTIONS
