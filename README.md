@@ -74,7 +74,22 @@ Following type support SOAP with Attachments.
 }
 ```
 
-Config "templatedir" allows user provided templates with filename of "<type>-PAYLOAD"
+Config "template" allows user provided template using any file name or location.
+
+```
+{
+  "type": "SOAP",
+  "template": "my-payload", // template file is at "my-payload"
+  "request": {
+    "url": "http://localhost:7901/mftapp/services/transfer/SOAP2File",
+    "method": "POST",
+    "headers": { "Content-Type": "text/xml; charset=utf-8" },
+    "auth": { "user": "USERNAME", "pass": "PASSWORD" }
+  }
+}
+```
+
+Config "templatedir" allows user provided template location of filename "<type>-PAYLOAD"
 
 ```
 {
@@ -85,7 +100,6 @@ Config "templatedir" allows user provided templates with filename of "<type>-PAY
     "method": "POST",
     "headers": { "Content-Type": "text/xml; charset=utf-8" },
     "auth": { "user": "USERNAME", "pass": "PASSWORD" }
-
   }
 }
 ```
@@ -108,7 +122,7 @@ Illustrates chaining of requests using "cfgarr config array element for upload f
 }
 ```
 
-If a config argument is not provided, upload.js looks for one at ~/.mft/uploadreq.json
+If a config argument is not provided, upload.js looks for one at ~/.mft/upload.json using process.argv[1].
 
 ### Function getRequestConfig 
 #### Asyncronous function to process CLI arguments and get the config file

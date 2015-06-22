@@ -272,8 +272,7 @@ module.exports.fileUpload = fileUpload;
 var getRequestConfig = function(argv, cb) {
   //console.log('argv is: ' +argv);
   // return cb(err, args, cfgfile, cfgjson)
-  var reqOptions;
-  var DEFAULT_CONFIG_FILE = '/.mft/uploadreq.json';
+  var reqOptions, jsoncfg;
   var args = outils.parseCalloutArgs(argv);
 
   if (!args.file) {
@@ -294,7 +293,9 @@ var getRequestConfig = function(argv, cb) {
     }
   } else {
     var home = osenv.home();
-    jsoncfg = home +DEFAULT_CONFIG_FILE;
+    var jpath = path.parse(process.argv[1]);
+    var jfname = jpath.name + '.json';
+    jsoncfg = path.join(home, '/.mft/', jfname);
   };
 
   try {

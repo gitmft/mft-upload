@@ -2,7 +2,7 @@
   "type": "SOAP",
   "maxsize": 20214400,
   "request": {
-    "url": "http://localhost:7901/mftapp/services/transfer/SOAP2File",
+    "url": "http://localhost:65456/mftapp/services/transfer/SOAP2File",
     "method": "POST",
     "headers": { "Content-Type": "text/xml; charset=utf-8" },
     "body": "",
