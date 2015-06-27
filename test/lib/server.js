@@ -12,10 +12,19 @@ var body = '';
 var payloadType = 'InlineXML';
 var uri = '/mftapp/services/transfer/SOAP2File';
 var myUri = req.url;
+var ucmUri = '/idcws/GenericSoapPort';
+var ucmresp = 'test/ucm_bad_response_body';
 var ct = 'text/xml; charset=utf-8';
+
+  //console.log('SERVER URI:' +myUri);
 
   if (req.headers['content-type'] != ct) {
     retres(res, 400, 'Invalid Header Content Type');
+  } else if (ucmUri === myUri) {
+    var fs = require('fs');
+    //console.log('TESTING UCM URI:' +myUri);
+    var uresp = fs.readFileSync(ucmresp, "utf8");
+    retres(res, 200, uresp);
   } else if (uri != myUri) {
     retres(res, 500, 'Invalid Request URL');
   } else {
@@ -91,6 +100,6 @@ http.createServer(function(req,res){
   res.writeHead(200,{'Content-Type':'text/plain'});
   res.end('username is "'+username+'" and password is "'+password+'"');
 
-}).listen(1337,'127.0.0.1');
+}).listen(8000,'127.0.0.1');
 
 */

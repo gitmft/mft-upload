@@ -1,6 +1,6 @@
 {
   "name": "mft-upload",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "A REST utility for uploading file to a SOAP WebService. It is configurable and works as is with Oracle Managed file transfer (MFT).",
   "main": "index.js",
   "scripts": {

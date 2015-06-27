@@ -1,0 +1,20 @@
+------=_Part_969_463242553.1435268621680
+Content-Type: application/xop+xml;charset=utf-8;type="text/xml"
+Content-Transfer-Encoding: 8bit
+Content-ID: <d074d265-6028-48df-8ad2-f567825a4d28>
+
+<?xml version="1.0" encoding="utf-8" ?>
+<env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/">
+  <env:Header/>
+  <env:Body>
+    <ns2:GenericResponse xmlns:ns2="http://www.oracle.com/UCM" webKey="cs">
+      <ns2:Service IdcService="CHECKIN_UNIVERSAL">
+        <ns2:Document>
+          <ns2:Field name="error">Error: java.lang.reflect.InvocationTargetException</ns2:Field>
+        </ns2:Document>
+      </ns2:Service>
+    </ns2:GenericResponse>
+  </env:Body>
+</env:Envelope>
+------=_Part_969_463242553.1435268621680--
+

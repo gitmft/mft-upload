@@ -5,7 +5,7 @@ var path = require("path");
 var upload = require('..');
 
 // not sure how to test with a server connection 
-describe('mft-upload "getRequestConfig" method sync test', function() {
+describe('1 - mft-upload "getRequestConfig" method sync test', function() {
 
   it('Check for usage from getRequestConfig', function() {
     var exp = 'Usage: _mocha file=<file> config=<json request config file>';
@@ -20,7 +20,7 @@ describe('mft-upload "getRequestConfig" method sync test', function() {
   });
 });
 
-describe('mft-upload "fileUpload" method async test', function() {
+describe('2 - mft-upload "fileUpload" method async test', function() {
   var res = '';
   var exp = 'Error: connect ECONNREFUSED';
   var ar = [,];
@@ -55,7 +55,7 @@ describe('mft-upload "fileUpload" method async test', function() {
   });
 });
 
-describe('mft-upload "upload" method async test', function() {
+describe('3 - mft-upload "upload" method async test', function() {
   var res = '';
   var exp = 'Error: connect ECONNREFUSED';
   var ar = [,];
@@ -79,7 +79,7 @@ describe('mft-upload "upload" method async test', function() {
 
 });
 
-describe('mft-upload "upload" method async connect invalid header test', function() {
+describe('4 - mft-upload "upload" method async connect invalid header test', function() {
   var res = '';
   var exp1 = 'ERROR: fileUpload.request Response code of 400 is not 200';
   var exp2 = 'Invalid Header Content Type';
@@ -116,7 +116,7 @@ describe('mft-upload "upload" method async connect invalid header test', functio
 
 });
 
-describe('mft-upload "upload" method async successful upload test', function() {
+describe('5 - mft-upload "upload" method async successful upload test', function() {
   var res1 = '';
   var res2 = '';
   var exp1 = 200;
@@ -141,11 +141,11 @@ describe('mft-upload "upload" method async successful upload test', function() {
       if (er) {
         res1 = respcode;
         if (!res1) res1 = '500';
-        console.log('TEST fileUpload er is ' +er);
+        //console.log('TEST5 ERROR fileUpload er is ' +er);
         res2 = '' +er;
       } else {
-        //console.log('TEST respcode: ' +respcode);
-        //console.log('TEST stats:.summary ' +stats.summary);
+        //console.log('TEST5 NO ERROR respcode: ' +respcode);
+        //console.log('TEST5 stats:.summary ' +stats.summary);
         res1 = respcode;
         res2 = stats.summary;
       }
@@ -159,7 +159,7 @@ describe('mft-upload "upload" method async successful upload test', function() {
   });
 });
 
-describe('mft-upload "upload" method async test invalid URL', function() {
+describe('6 - mft-upload "upload" method async test invalid URL', function() {
   var res1 = '';
   var res2 = '';
   var exp1 = 500;
@@ -191,6 +191,36 @@ describe('mft-upload "upload" method async test invalid URL', function() {
   it('Check for 500 and Invalid URL', function() {
     expect(res1).to.equal(exp1); // verify results
     expect(res2).to.have.string(exp2); // verify results
+  });
+});
+
+describe('7 - mft-upload "upload" method UCM Bad Response async test', function() {
+  var res1 = '';
+  var exp1 = 'validateSOAPResponse parse error: Error: java.lang.reflect.InvocationTargetException';
+  var ar = [,];
+  ar[0] = 'file=' +path.join(__dirname, 'ucmbad.json');
+  ar[1] = 'config=' +path.join(__dirname, 'ucmbad.json');
+
+  var server = require(path.join(__dirname,'/lib/server.js'))
+
+  before(function () {
+    server.listen(8001);
+  });
+
+  after(function () {
+    server.close();
+  });
+
+  beforeEach(function(done){
+    upload.upload(ar, function(er, respcode, jcfg, stats) {
+      //console.log('TEST7 BAD UCM er is ' +er);
+      res1 = er;
+      done();
+    });
+  });
+
+  it('Check for validateSOAPResponse ERROR', function() {
+    expect(res1).to.equal(exp1); // verify results
   });
 });
 

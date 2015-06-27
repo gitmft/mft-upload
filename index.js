@@ -24,7 +24,7 @@ function getStats(start, end,  fn, path, sz) {
 var validateSOAPResponse = function(soapbody, cb) {
   var xml2js = require('xml2js');
   var po = { mergeAttrs: 'true'}; 
-  var myerr;
+  var myerr = '';
   var mj;
 
   var parser = new xml2js.Parser(po);
@@ -79,12 +79,39 @@ var validateSOAPResponse = function(soapbody, cb) {
       ferr += 'faultactor:' +fact +'; ';
       myerr = 'validateSOAPResponse parse error: ' +ferr;
       //console.log(myerr);
+      return cb(myerr);
     };
+
+   var gr = bdy[0]["ns2:GenericResponse"];
+   //console.log('validateSOAPResponse IS UCM GenericResponse');
+   if (!gr) return cb('');
+   var svc = gr[0]["ns2:Service"];
+   //console.log('validateSOAPResponse Looks like UCM');
+   //console.log('validateSOAPResponse IS UCM Service');
+   if (!svc) return cb('');
+   var doc = svc[0]["ns2:Document"];
+   //console.log('validateSOAPResponse IS UCM Document');
+   if (!doc) return cb('');
+   var fld = doc[0]["ns2:Field"];
+   //console.log('validateSOAPResponse IS UCM Field');
+   //console.log('validateSOAPResponse FLD:' +util.inspect(fld, {depth:5}));
+   if (!fld) return cb('');
+   var fer = fld[0]["_"];
+   //console.log('validateSOAPResponse IS UCM Error');
+   if (!fer) return cb('');
+   if (fer.toUpperCase().indexOf('ERROR:') > -1) {
+     myerr = 'validateSOAPResponse parse error: ' +fer;
+     //console.log('validateSOAPResponse WCC ERROR:' +myerr);
+     //console.trace();
+     return cb(myerr);
+   };
+
   } catch (per) {
+    console.log('VALIDATESOAPRESPONSE CATCH:' +per);
     return cb(per);
   };
 
-    return cb(myerr);
+  return cb(myerr);
 };
 
 // generate json from the SOAP body
@@ -93,16 +120,14 @@ var soap2json = function(soapbody, cb) {
   var xml2js = require('xml2js');
   var po = { mergeAttrs: 'true' }; 
 
+  //console.log('SOAP2JSON BODY:' +soapbody);
   var parser = new xml2js.Parser(po);
   parser.parseString(soapbody, function (err, json) {
     if (err) {
       var e2 = 'soap2json error: ' +err;
+      //console.log('SOAP2JSON ERROR:' +err + ' ' +soapbody);
       return cb(e2, json);
     };
-
-    var env = json["env:Envelope"];
-    var hdr = env["env:Header"];
-    var bdy = env["env:Body"];
 
     return cb(err, json);
   });
@@ -232,25 +257,56 @@ var fileUpload = function(fn, cfg, cb) {
         // Print out the response body
         //console.log(req.body);
         //console.log(body)
-        validateSOAPResponse(body, function(err) {
-          if (err) {
-	    console.log(err); 
-	    return cb(err);
+
+
+        // UCM hack to parse out soap body from the raw response returned by UCM
+        // breaks if Soap Env case or prefix changes
+        /*
+          validateSOAPResponse SOAPBODY:------=_Part_969_463242553.1435268621680
+          Content-Type: application/xop+xml;charset=utf-8;type="text/xml"
+          Content-Transfer-Encoding: 8bit
+          Content-ID: <d074d265-6028-48df-8ad2-f567825a4d28>
+          <?xml version="1.0" encoding="utf-8" ?>
+          <env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/"><env:Header/>
+            <env:Body>
+              <ns2:GenericResponse xmlns:ns2="http://www.oracle.com/UCM" webKey="cs">
+                <ns2:Service IdcService="CHECKIN_NEW">
+                  <ns2:Document>
+                    <ns2:Field name="error">Error: java.lang.reflect.InvocationTargetException</ns2:Field>
+                  </ns2:Document>
+                </ns2:Service>
+              </ns2:GenericResponse>
+            </env:Body>
+          </env:Envelope>
+          ------=_Part_969_463242553.1435268621680--
+        */
+        var splitstr = 'env:Envelope';
+        var bodyparts = body.split(splitstr);
+        var newbody;
+        if (bodyparts.length === 3) {
+          var newbody = '<' +splitstr +bodyparts[1] +splitstr +'>';
+          //console.log('REQUEST newbody:' +newbody);
+          body = newbody;
+        };
+        // END UCM
+
+
+
+        validateSOAPResponse(body, function(verr) {
+          if (verr) {
+	    //console.log(verr); 
+	    myer = verr;
           };
         });
     } else {
-      var mer = 'ERROR: fileUpload.request Response code of ' +rc +' is not 200' +"\n";;
-      mer += body;
-      //console.log(mer);
-      return cb(mer, rc);
+      myer = 'ERROR: fileUpload.request Response code of ' +rc +' is not 200' +"\n";;
+      myer += body;
+      //console.log(myer);
+      return cb(myer, rc);
     }
     // convert body to json for return
     soap2json(body, function(err, json) {
-      if (error) {
-	console.log('fileUpload error is:' +err);
-	return cb(error, response);
-      }
-      body = json;
+      if (!err && json) body = json;
     });
     stats.filename = filename;
     stats.filepath = filepath
@@ -337,7 +393,7 @@ function upload(myargv, cb) {
     fileUpload(filepath, jsoncfg, function(er, respcode, jsonbody, stats) {
       if (er) {
         var err = 'main.fileUpload error: ' +er;
-        //console.log('TEST ' +err);
+        //console.log('UPLOAD ERROR:' +er);
         //console.trace();
         return cb(er, respcode);
       } else {
