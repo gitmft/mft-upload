@@ -28,7 +28,11 @@ npm install mft-upload --save
 
 ### Command Line
 
-node upload.js file=index.js [config=req.json]
+node upload.js file=index.js [config=req.json | passwords=<PASS1 PASS2>]
+
+# file: Required pointer to the file to be uploaded.
+# config: Optional points to the config file described below. Default location is $HOME/.mft/upload.json
+# passwords: Optional space delimited array of passwords substituted into the config or templates
 
 ### Config Files
 The config file describes a request type and maximum file size at the root level. It also embedds and reuses the request type endpoint and authentication used by the [HTTP Request package](https://github.com/request/request). A sample req.json shown below using Basic authentication is provided in the [files folder](files/req.json). The request package supports many authentication types beyond what is shown below.

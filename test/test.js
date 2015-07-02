@@ -224,3 +224,46 @@ describe('7 - mft-upload "upload" method UCM Bad Response async test', function(
   });
 });
 
+
+describe('8 - mft-upload "upload" method successful authentication and passwords arg test', function() {
+  var res1 = '';
+  var res2 = '';
+  var exp1 = 200;
+  var exp2 = 'Upload of file \"ucmgood.json\" of';
+  var ar = [,];
+  ar[0] = 'file=' +path.join(__dirname, 'ucmgood.json');
+  ar[1] = 'config=' +path.join(__dirname, 'ucmgood.json');
+  ar[2] = 'Passwords="my-test-password"';
+  var args, filepath, jsoncfg, reqOptions;
+
+  var server = require(path.join(__dirname,'/lib/server.js'))
+
+  before(function () {
+    server.listen(8002);
+  });
+
+  after(function () {
+    server.close();
+  });
+
+  beforeEach(function(done){
+    upload.upload(ar, function(er, respcode, jcfg, stats) {
+      if (er) {
+        res1 = respcode;
+        if (!res1) res1 = '500';
+        //console.log('TEST8 ERROR fileUpload er is ' +er);
+        res2 = '' +er;
+      } else {
+        //console.log('TEST8 NO ERROR respcode: ' +respcode);
+        res1 = respcode;
+        res2 = stats.summary;
+      }
+      done();
+    });
+  });
+
+  it('Check for 200 and successful upload AUTHENTICATION and passwords parameter', function() {
+    expect(res1).to.equal(exp1); // verify results
+    expect(res2).to.have.string(exp2); // verify results
+  });
+});

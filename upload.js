@@ -29,8 +29,8 @@ var args;
 
 upload.upload(process.argv, function(err, respcode, jcfg, stats) {
   if (err) {
-    console.log('Upload Error: ' +err);
-    //console.trace('Upload Error: ' +err);
+    //console.log('Upload Error: ' +err);
+    console.trace('Upload Error: ' +err);
     process.exit(1);
   };
 });

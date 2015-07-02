@@ -11,21 +11,40 @@ var server = module.exports = http.createServer(function (req, res) {
 var body = '';
 var payloadType = 'InlineXML';
 var uri = '/mftapp/services/transfer/SOAP2File';
-var myUri = req.url;
+var reqUri = req.url;
+var basicAuthUri = '/UCM-BASIC-AUTH';
 var ucmUri = '/idcws/GenericSoapPort';
 var ucmresp = 'test/ucm_bad_response_body';
 var ct = 'text/xml; charset=utf-8';
 
-  //console.log('SERVER URI:' +myUri);
+  //console.log('SERVER URI:' +reqUri);
+  //console.log('SERVER Headers: ', req.headers);
 
   if (req.headers['content-type'] != ct) {
     retres(res, 400, 'Invalid Header Content Type');
-  } else if (ucmUri === myUri) {
+  } else if (basicAuthUri === reqUri) {
+    var expectedPwd = 'admin:"my-test-password"';
+    var auth = req.headers['authorization']; // authorization
+    var tmp = auth.split(' ');  
+    var buf = new Buffer(tmp[1], 'base64');
+    var plain_auth = buf.toString();
+    //console.log("SERVER Checking Authentication: ", expectedPwd, plain_auth);
+    if (plain_auth === expectedPwd) {
+      var good = "SERVER Successfully Decoded Authorization " +plain_auth;
+      //console.log(good);
+      retres(res, 200, good);
+    } else {
+      var bad = "SERVER Successfully Decoded Authorization " +plain_auth;
+      var bad = 'SERVER Authentication: Failed: ' +expectedPwd +'|' +plain_auth;
+      console.log(bad);
+      retres(res, 401, bad);
+    };
+  } else if (ucmUri === reqUri) {
     var fs = require('fs');
-    //console.log('TESTING UCM URI:' +myUri);
+    //console.log('TESTING UCM URI:' +reqUri);
     var uresp = fs.readFileSync(ucmresp, "utf8");
     retres(res, 200, uresp);
-  } else if (uri != myUri) {
+  } else if (uri != reqUri) {
     retres(res, 500, 'Invalid Request URL');
   } else {
     req.on('data', function (chunk) {

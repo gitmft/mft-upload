@@ -8,6 +8,7 @@ var osenv = require('osenv');
 // BEGIN INTERNAL FUNCTIONS AND PROPERTIES
 
 var _DEFAULT_MAX_FILE_SIZE = 26*1024*1024;
+var _PASSWORDS = [];
 
 function getStats(start, end,  fn, path, sz) {
   var ms = end-start
@@ -143,7 +144,7 @@ function nextUpload(carr) {
 
   var cfg   = carr.shift();
   var ccfg  = cfg.config;
-  var cfile = cfg.file +' ' +carr.length;
+  var cfile = cfg.file; 
   var str = 'B4 carr.length = ' +carr.length +' Config=' +ccfg +' File=' +cfile;
   var argv2 = ['file='+cfile, 'config='+ccfg];
   //console.log('nextUpload ENTRY:' +str);
@@ -157,6 +158,26 @@ function nextUpload(carr) {
     };
   });
 };
+
+// update password in the request if it was provided in the cmd line options
+// Supports:
+//   SOAP HTTP Auth cfg.request.auth See https://github.com/request/request#http-authentication.
+var updateReqPassword = function(cfg) {
+    var ret = true;
+    if (_PASSWORDS.length > 0) {
+        //console.log('UPDATEREQPASSWORD _PASSWORDS.length: ' +_PASSWORDS.length);
+        //console.log('UPDATEREQPASSWORD cfg: ' ,cfg);
+        // user must be provided before we will update the password field
+	if (cfg.request.auth && cfg.request.auth.user) { // 
+	  mypass = _PASSWORDS.shift();
+          cfg.request.auth.pass = mypass;
+	  //console.log('UPDATEREQPASSWORD request HTTP password updated: ' +mypass); 
+	} else
+	  ret = false;
+    };
+    return ret;
+};
+
 
 // END INTERNAL ONLY FUNCTIONS
 
@@ -173,6 +194,7 @@ var fileUpload = function(fn, cfg, cb) {
   var filename =  path.basename(filepath);
   var filesize = 0;
   var rc;
+  var newpass;
   var maxsize = cfg.maxsize;
   var reqtype = cfg.type;
   var req = cfg.request;
@@ -201,6 +223,8 @@ var fileUpload = function(fn, cfg, cb) {
   };
 
   //console.log("Maxsize is: " +maxsize);
+  // update passwords before doing temnplate/genUploadRequest if passwords arg provided
+  newpass = updateReqPassword(cfg);
 
   switch (reqtype.toUpperCase()) {
         case 'FORM':
@@ -225,7 +249,7 @@ var fileUpload = function(fn, cfg, cb) {
           // special handling for WSEE to not require outils to do it
           if (cfg.request.auth.user) cfg.user=cfg.request.auth.user;
           if (cfg.request.auth.pass) cfg.pass=cfg.request.auth.pass;
-          //console.log(JSON.stringify(cfg));
+
           //console.log(JSON.stringify(cfg));
           // generate the request payloads
           outils.genUploadRequest(cfg, function(er, fsz, bdy) {
@@ -242,7 +266,7 @@ var fileUpload = function(fn, cfg, cb) {
   start = new Date();
   end = new Date();
 
-  //console.log(req.body);
+  //console.log('UPLOAD req: ' , req);
 
   request(req, function (error, response, body) {
     resp = response;
@@ -290,8 +314,6 @@ var fileUpload = function(fn, cfg, cb) {
         };
         // END UCM
 
-
-
         validateSOAPResponse(body, function(verr) {
           if (verr) {
 	    //console.log(verr); 
@@ -320,13 +342,14 @@ var fileUpload = function(fn, cfg, cb) {
 
 module.exports.fileUpload = fileUpload;
 
-// getConfig
+// getRequestConfig
 // parse the arguments to find the file to upload
 // find the request json config file
 
 //function getRequestConfig(argv, cb) {
 var getRequestConfig = function(argv, cb) {
-  //console.log('argv is: ' +argv);
+  //
+  //console.log('GETREQUESTCONFIG: argv is: ' +argv);
   // return cb(err, args, cfgfile, cfgjson)
   var reqOptions, jsoncfg;
   var args = outils.parseCalloutArgs(argv);
@@ -340,6 +363,19 @@ var getRequestConfig = function(argv, cb) {
   };
 
   var filepath = args.file;
+  var passwords = args.passwords;
+  if (passwords) {
+    //console.log('GETREQUESTCONFIG passwords:' +passwords);
+    if (_PASSWORDS.length === 0) {
+	//console.log('GETREQUESTCONFIG Updating _PASSWORDS:' +passwords);
+        var sp = passwords.split(' ');
+	for (var i = 0; i < sp.length; i++) {
+	  //console.log('GETREQUESTCONFIG _PASSWORDS:' +i, sp[i]);
+	  _PASSWORDS[i] = sp[i];
+	};
+    };
+
+  };
 
   if (args.config) {
     jsoncfg = args.config;
@@ -393,8 +429,9 @@ function upload(myargv, cb) {
     fileUpload(filepath, jsoncfg, function(er, respcode, jsonbody, stats) {
       if (er) {
         var err = 'main.fileUpload error: ' +er;
-        //console.log('UPLOAD ERROR:' +er);
-        //console.trace();
+        //console.log('UPLOAD ERROR: ' +er);
+        //console.log('UPLOAD args: ', args);
+        //console.trace('UPLOAD TRACE:', jsoncfg);
         return cb(er, respcode);
       } else {
         console.log('Response code is: ' +respcode);

@@ -11,6 +11,8 @@
 
     // OK TO CHANGE: MFT SOAP Source Endpoint
     "uri": "http://localhost:7901/mftapp/services/transfer/SOAP2File",
+    // OK TO CHANGE: HTTP Authentication. Can use cmd line property Passwords='pass1' 
+    "auth": { "user": "USERNAME", "pass": "PASSWORD" },
     // OK TO CHANGE
 
     "method": "POST",
@@ -19,12 +21,7 @@
     },
     "multipart": [
        {
-         "Content-Type": "text/xml;charset=UTF-8",
-
-         // OK TO CHANGE: supports many security options. See https://github.com/request/request
-         "auth": { "user": "USERNAME", "pass": "PASSWORD" }
-         // OK TO CHANGE
-
+         "Content-Type": "text/xml;charset=UTF-8"
        },
        {
          "Content-Type": "application/octet-stream"
