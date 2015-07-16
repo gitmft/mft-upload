@@ -4,6 +4,8 @@ var expect = chai.expect;
 var path = require("path");
 var upload = require('..');
 
+var svrport = 8765;
+
 // not sure how to test with a server connection 
 describe('1 - mft-upload "getRequestConfig" method sync test', function() {
 
@@ -32,23 +34,30 @@ describe('2 - mft-upload "fileUpload" method async test', function() {
   beforeEach(function(done){
     upload.getRequestConfig(ar, function(err, retargs, cfgfile, json) {
       if (err) {
-        //console.log('TEST getRequestConfig err is ' +err);
+        console.log('TEST getRequestConfig err is ' +err);
         res = err;
       }
       args = retargs;
       filepath = args.file;
       jsoncfg = cfgfile;
       reqOptions = json;
+      //console.log('TEST getRequestConfig Completed');
     });
 
-    upload.fileUpload(filepath, reqOptions, function(er, respcode, jsonbody, stats) {
+    console.log('TEST fileUpload Starting');
+    upload.fileUpload(filepath, reqOptions, args, function(er, respcode, jsonbody, stats) {
+      //console.log('TEST fileUpload Callback');
       if (er) {
         //console.log('TEST fileUpload er is ' +er);
         res = '' +er;
       };
+      //console.log('TEST fileUpload done');
       done();
     });
   });
+
+
+  console.log('TEST fileUpload next is it');
 
   it('Check for ECONNREFUSED from fileUpload ', function() {
     expect(res).to.have.string(exp); // verify results
@@ -92,7 +101,7 @@ describe('4 - mft-upload "upload" method async connect invalid header test', fun
   var server = require(path.join(__dirname,'/lib/server.js'))
 
   before(function () {
-    server.listen(8000);
+    server.listen(svrport);
   });
 
   after(function () {
@@ -129,7 +138,7 @@ describe('5 - mft-upload "upload" method async successful upload test', function
   var server = require(path.join(__dirname,'/lib/server.js'))
 
   before(function () {
-    server.listen(8000);
+    server.listen(svrport);
   });
 
   after(function () {
@@ -172,7 +181,7 @@ describe('6 - mft-upload "upload" method async test invalid URL', function() {
   var server = require(path.join(__dirname,'/lib/server.js'))
 
   before(function () {
-    server.listen(8000);
+    server.listen(svrport);
   });
 
   after(function () {
@@ -204,7 +213,7 @@ describe('7 - mft-upload "upload" method UCM Bad Response async test', function(
   var server = require(path.join(__dirname,'/lib/server.js'))
 
   before(function () {
-    server.listen(8001);
+    server.listen(svrport);
   });
 
   after(function () {
@@ -239,7 +248,7 @@ describe('8 - mft-upload "upload" method successful authentication and passwords
   var server = require(path.join(__dirname,'/lib/server.js'))
 
   before(function () {
-    server.listen(8002);
+    server.listen(svrport);
   });
 
   after(function () {

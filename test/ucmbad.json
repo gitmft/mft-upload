@@ -2,7 +2,7 @@
   "type": "UCM",
   "template": "test/UCM-PAYLOAD",
   "request": {
-    "url": "http://localhost:8001/idcws/GenericSoapPort",
+    "url": "http://localhost:8765/idcws/GenericSoapPort",
     "method": "POST",
     "headers": { "Content-Type": "text/xml; charset=utf-8" },
     "auth": { "user": "HR_SPEC_ALL", "pass": "%PASSWORD%" }

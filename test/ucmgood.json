@@ -2,7 +2,7 @@
   "type": "UCM",
   "template": "test/UCM-PAYLOAD",
   "request": {
-    "url": "http://localhost:8002/UCM-BASIC-AUTH",
+    "url": "http://localhost:8765/UCM-BASIC-AUTH",
     "method": "POST",
     "headers": { "Content-Type": "text/xml; charset=utf-8" },
     "auth": { "user": "admin", "pass": "" }
