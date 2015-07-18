@@ -11,6 +11,7 @@ Implemented
 * Chaining of requests for upload and notify SOAP service use cases
 * Custom payload templates using templatedir property
 * Allow removal of passwords from the config file
+* Support respfile argument for template development and improved debugging 
 
 Future use cases include the following:
 * Upload to HTTP servers using MTOM attachments 
@@ -29,7 +30,7 @@ npm install mft-upload --save
 
 ### Command Line
 
-node upload.js file=index.js [config=req.json | passwords=<PASS1 PASS2>]
+node upload.js file=index.js [config=req.json | passwords=<PASS1 PASS2> respfile=<FILESPAC>]
 
 file: Required pointer to the file to be uploaded.
 

@@ -266,11 +266,13 @@ var soap2json = function(soapbody, cb) {
 };
 
 // recursive invocation simulating a for loop
-function nextUpload(carr, prevargs) {
+// cb(err , respcode2, jcfg2, stats2) {
+function nextUpload(carr, prevargs, cb) {
   if (carr.length == 0) {
     // all uploads completed
     //console.log('nextUpload EXIT: carr length is 0');
-    return;
+    console.log('NEXTUPLOAD ENTRY: no more returning null');
+    return cb('', '', '', '');
   };
 
   var cfg   = carr.shift();
@@ -282,17 +284,24 @@ function nextUpload(carr, prevargs) {
 
   if (prevargs.docid) argv2.push('docid='+prevargs.docid);
   if (prevargs.doctitle) argv2.push('doctitle='+prevargs.doctitle);
+  if (prevargs.outdir) argv2.push('outdir='+prevargs.outdir);
+  if (prevargs.dir) argv2.push('dir='+prevargs.dir);
 
   //console.log('NEXTUPLOAD argv2 is ',  argv2);
-  //console.log('nextUpload ENTRY:' +str);
   upload(argv2, function(er2, respcode2, jcfg2, stats2) {
-    if (er2) {
-      var estr = 'Request.cfgarr config=' +ccfg +' file=' +cfile +' ' +er2;
-      console.log(estr);
-      process.exit(1);
+    var clen = carr.length;
+    //console.log('NEXTUPLOAD upload callback returned ', er2, respcode2);
+    if (er2 || clen < 1) {
+      //var estr = 'Request.cfgarr config=' +ccfg +' file=' +cfile +' ' +er2;
+      //console.log(estr);
+      //console.log('NEXTUPLOAD upload callback returned ', er2, respcode2, jcfg2, stats2, clen);
+      return cb(er2, respcode2, jcfg2, stats2);
     } else {
-      nextUpload(carr, argv2);
-    };
+      //console.log('NEXTUPLOAD invoking next upload carr.length is', clen);
+      nextUpload(carr, argv2, function(er3, respcode3, jcfg3, stats3) {
+	return cb(er3, respcode3, jcfg3, stats3);
+      });
+    }; 
   });
 };
 
@@ -393,7 +402,10 @@ var fileUpload = function(fn, cfg, args, cb) {
   var respheaders = '';
   var docid = args.docid;
   var doctitle = args.doctitle;
+  var dir = args.dir;
+  var outdir = args.outdir;
   var mparts = [], mcontents = [], mheaders = [];
+  var ufpath;
 
   cfg.file = filepath || cfg.filepath;
   maxsize ? maxsize : _DEFAULT_MAX_FILE_SIZE;
@@ -521,25 +533,6 @@ var fileUpload = function(fn, cfg, args, cb) {
         // make a function for this dude!
         // UCM PUT or QUERY hack to parse out soap body from the raw response returned by UCM
         // breaks if Soap Env case or prefix changes
-        /*
-          validateSOAPResponse SOAPBODY:------=_Part_969_463242553.1435268621680
-          Content-Type: application/xop+xml;charset=utf-8;type="text/xml"
-          Content-Transfer-Encoding: 8bit
-          Content-ID: <d074d265-6028-48df-8ad2-f567825a4d28>
-          <?xml version="1.0" encoding="utf-8" ?>
-          <env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/"><env:Header/>
-            <env:Body>
-              <ns2:GenericResponse xmlns:ns2="http://www.oracle.com/UCM" webKey="cs">
-                <ns2:Service IdcService="CHECKIN_NEW">
-                  <ns2:Document>
-                    <ns2:Field name="error">Error: java.lang.reflect.InvocationTargetException</ns2:Field>
-                  </ns2:Document>
-                </ns2:Service>
-              </ns2:GenericResponse>
-            </env:Body>
-          </env:Envelope>
-          ------=_Part_969_463242553.1435268621680--
-        */
 	// code for UCM PUT and SEARCH. This really be part of the multipart impl above.
         var splitstr = 'env:Envelope';
         var bodyparts = body.split(splitstr);
@@ -593,7 +586,7 @@ var fileUpload = function(fn, cfg, args, cb) {
                 */
                 // HOW TO HANDLE FILE NOT FOUND CASE. I guess return error for now
                 if (doc.dID) {
-                  args.ucmDoc = doc;
+                  //args.ucmDoc = doc;
                   args.dID = doc.dID;
                   args.docid = doc.dID;
                   args.doctitle = doc.dDocTitle;
@@ -636,9 +629,17 @@ var fileUpload = function(fn, cfg, args, cb) {
 	  console.log('Downloaded File ' , doctitle, ' is ', (isbin ? 'Binary' : 'TEXT'), bo);
 	  //options = 'binary' 'utf8' 'base64' 'ascii' 'ucs2' 'hex'
 	  var newbuf = new Buffer(mcontents[1], bo);
-	  var wstream = fs.createWriteStream(doctitle);
+	  ufpath = doctitle;
+	  if (outdir) { 
+	    ufpath = path.join(outdir, doctitle);
+	  } else if (dir) { 
+	    ufpath = path.join(dir, doctitle);
+	  };
+
+	  var wstream = fs.createWriteStream(ufpath);
 	  wstream.write(newbuf);
 	  wstream.end();
+          //console.log('FILEUPLOAD UCMGET ufpath:', ufpath);
         };
       } else { // if (!err && json)
 	// probably no json returned for non SOAP use case
@@ -648,12 +649,21 @@ var fileUpload = function(fn, cfg, args, cb) {
 	//console.log('ELSE json:', json);
 	}
     });
+
     if (!myer) {
       stats.filename = filename;
+      // return full path to caller
+      //console.log('FILEUPLOAD FINAL ufpath:', ufpath);
+      if (ufpath) {
+        stats.ucmfilepath = ufpath;
+        //console.log('FILEUPLOAD ucmfilepath:', stats.ucmfilepth);
+      };
       stats.filepath = filepath
       stats.filesize = filesize;
       stats.summary = getStats(start, end, filename, filepath, filesize);
+      //console.log('FILEUPLOAD stats:', stats);
     };
+
 
     // all done, invoke the callback
     cb(myer, rc, body, stats);
@@ -759,6 +769,7 @@ function upload(myargv, cb) {
       } else {
         console.log('Response code is: ' +respcode);
         console.log(stats.summary);
+        //console.log('UPLOAD args: ', args);
         //console.log('dID:', args.dID);
         // support chaining of requests
         var cfgarr = jsoncfg.cfgarr;
@@ -767,8 +778,12 @@ function upload(myargv, cb) {
 	  //  [ { config: 'ucmget.json', file: 'UCM-PAYLOAD-GET' } ]
 	  if (args.docid) cfgarr[0]['docid'] = args.docid; 
 	  if (args.doctitle) cfgarr[0]['doctitle'] = args.doctitle; 
+	  if (args.outdir) cfgarr[0]['outdir'] = args.outdir; 
+	  if (args.dir) cfgarr[0]['dir'] = args.dir; 
 	  //console.log('UPLOAD next cfgarr: ', cfgarr);
-          nextUpload(cfgarr, args);
+          nextUpload(cfgarr, args, function(er3, respcode3, jcfg3, stats3) {
+	    return cb(er3, respcode3, jcfg3, stats3);
+	  });
         } else {
           return cb('', respcode, jsoncfg, stats);
         };
