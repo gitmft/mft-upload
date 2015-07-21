@@ -280,12 +280,23 @@ function nextUpload(carr, prevargs, cb) {
   var cfile = cfg.file; 
   var str = 'B4 carr.length = ' +carr.length +' Config=' +ccfg +' File=' +cfile;
   var argv2 = ['file='+cfile, 'config='+ccfg];
-  //console.log('NEXTUPLOAD prevargs is ',  prevargs);
 
   if (prevargs.docid) argv2.push('docid='+prevargs.docid);
   if (prevargs.doctitle) argv2.push('doctitle='+prevargs.doctitle);
   if (prevargs.outdir) argv2.push('outdir='+prevargs.outdir);
   if (prevargs.dir) argv2.push('dir='+prevargs.dir);
+
+  if (!prevargs.businessobject) {
+    // code assumes required file arg was previosuly provided
+    var pfile =  path.basename(prevargs.file)
+    var pfilear =  path.basename(prevargs.file)
+    var pfilear =  pfile.split('.');
+    prevargs.businessobject = pfilear[0];
+    //console.log('NEXTUPLOAD businessobject is ', prevargs.businessobject);
+  }
+  //console.log('NEXTUPLOAD prevargs is ',  prevargs);
+
+  if (prevargs.businessobject) argv2.push('businessobject='+prevargs.businessobject);
 
   //console.log('NEXTUPLOAD argv2 is ',  argv2);
   upload(argv2, function(er2, respcode2, jcfg2, stats2) {
@@ -406,6 +417,7 @@ var fileUpload = function(fn, cfg, args, cb) {
   var outdir = args.outdir;
   var mparts = [], mcontents = [], mheaders = [];
   var ufpath;
+  var businessobject = args.businessobject;
 
   cfg.file = filepath || cfg.filepath;
   maxsize ? maxsize : _DEFAULT_MAX_FILE_SIZE;
@@ -433,9 +445,10 @@ var fileUpload = function(fn, cfg, args, cb) {
   //console.log("Maxsize is: " +maxsize);
   // update passwords before doing temnplate/genUploadRequest if passwords arg provided
   newpass = updateReqPassword(cfg);
-  // slither docid for UCM into cfg for %%DOCID%% substitution
+  // slither docid for UCM into cfg for %%DOCID%% for UCM GET substitution
   if (docid) cfg.docid = docid;
   if (searchfile) cfg.searchfile = searchfile;
+  if (businessobject) cfg.businessobject = businessobject;
 
   //console.log('UPERTYPE:', upperType);
   switch (upperType) {
@@ -478,7 +491,7 @@ var fileUpload = function(fn, cfg, args, cb) {
   start = new Date();
   end = new Date();
 
-  //console.log('UPLOAD req: ' , req);
+  //console.log('UPLOAD req.body: ' , req.body);
 
   request(req, function (error, response, body) {
     resp = response;
@@ -780,6 +793,7 @@ function upload(myargv, cb) {
 	  if (args.doctitle) cfgarr[0]['doctitle'] = args.doctitle; 
 	  if (args.outdir) cfgarr[0]['outdir'] = args.outdir; 
 	  if (args.dir) cfgarr[0]['dir'] = args.dir; 
+	  if (args.businessobject) cfgarr[0]['businessobject'] = args.businessobject; 
 	  //console.log('UPLOAD next cfgarr: ', cfgarr);
           nextUpload(cfgarr, args, function(er3, respcode3, jcfg3, stats3) {
 	    return cb(er3, respcode3, jcfg3, stats3);
