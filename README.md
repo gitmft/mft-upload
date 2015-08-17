@@ -30,7 +30,7 @@ npm install mft-upload --save
 
 ### Command Line
 
-node upload.js file=index.js [config=req.json | passwords=<PASS1 PASS2> respfile=<FILESPAC>]
+node upload.js file=index.js [config=req.json | passwords=<PASS1 PASS2> debug=<true>
 
 file: Required pointer to the file to be uploaded.
 

@@ -414,6 +414,8 @@ var fileUpload = function(fn, cfg, args, cb) {
   var docid = args.docid;
   var doctitle = args.doctitle;
   var dir = args.dir;
+  var debug = args ? ''+args.debug : 'false';
+  debug = debug.toUpperCase();
   var outdir = args.outdir;
   var mparts = [], mcontents = [], mheaders = [];
   var ufpath;
@@ -422,7 +424,7 @@ var fileUpload = function(fn, cfg, args, cb) {
   cfg.file = filepath || cfg.filepath;
   maxsize ? maxsize : _DEFAULT_MAX_FILE_SIZE;
 
-  //console.log('FILEUPLOAD: args:', args);
+  if (debug == 'TRUE') console.log('FILEUPLOAD: args:', args);
   // check if request is "chained"
   if (cfgarr && cfgarr.length > 0) {
     //console.log('cfgarr.length is ' +cfgarr.length);
@@ -491,18 +493,22 @@ var fileUpload = function(fn, cfg, args, cb) {
   start = new Date();
   end = new Date();
 
-  //console.log('UPLOAD req.body: ' , req.body);
+  if (debug == 'TRUE') console.log('UPLOAD req.body: ' , req.body);
 
   request(req, function (error, response, body) {
+    //console.log('UPLOAD response: ', response);
+    if (debug == 'TRUE') console.log('UPLOAD body: ', body);
     resp = response;
     if (resp && resp.headers) respheaders = resp.headers; 
 
     if (error) {
 	//console.log('fileupload.request.error is:' +error);
+	//console.log('fileupload.request.error response:' +response);
+	//console.log('fileupload.request.error body:' +body);
 	return cb(error, response);
     }
     rc = response.statusCode;
-    //console.log('FileUpload Response code is:' +rc);
+    if (debug == 'TRUE') console.log('FileUpload Response code is:' +rc);
     end = new Date();
     if (respfile && body) {
         //console.log('RESPONSE FILE:', respfile);
@@ -566,9 +572,11 @@ var fileUpload = function(fn, cfg, args, cb) {
           };
         });
     } else {
+      //console.log('FILEUPLOAD req.body:', req.body);
+      //console.log('FILEUPLOAD res.body:', body);
       myer = 'ERROR: fileUpload.request Response code of ' +rc +' is not 200' +"\n";;
       myer += body;
-      //console.log(myer);
+      //console.log('FILEUPLOAD myerr:', myer);
       return cb(myer, rc);
     }
 
@@ -775,7 +783,7 @@ function upload(myargv, cb) {
     fileUpload(filepath, jsoncfg, args, function(er, respcode, jsonbody, stats) {
       if (er) {
         var err = 'main.fileUpload error: ' +er;
-        //console.log('UPLOAD ERROR: ' +er);
+        console.log('UPLOAD ERROR: ' +er);
         //console.log('UPLOAD args: ', args);
         //console.trace('UPLOAD TRACE:', jsoncfg);
         return cb(er, respcode);

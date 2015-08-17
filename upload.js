@@ -29,8 +29,8 @@ var args;
 
 upload.upload(process.argv, function(err, respcode, jcfg, stats) {
   if (err) {
-    //console.log('Upload Error: ' +err);
-    console.trace('Upload Error: ' +err);
+    console.log('Upload Error: ' +err);
+    console.trace();
     process.exit(1);
   };
 });
@@ -39,7 +39,7 @@ upload.upload(process.argv, function(err, respcode, jcfg, stats) {
 
 process.on('uncaughtException', function(err) {
   // print the uncaught error and exit;
-  console.log('uncaughtException:' +err);
+  console.log('Upload Error: uncaughtException:' +err);
   console.trace();
   process.exit(1);
 });
